@@ -1,0 +1,370 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "debian-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model country {
+  id              Int               @id @default(autoincrement())
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  last_updated_at DateTime          @default(now()) @db.Timestamptz(6)
+  deleted_at      DateTime?         @db.Timestamptz(6)
+  code            String            @db.VarChar(2)
+  label           String            @db.VarChar(50)
+  account_company account_company[]
+  signer          signer[]
+}
+
+model document {
+  id               Int        @id @default(autoincrement())
+  created_at       DateTime   @default(now()) @db.Timestamptz(6)
+  last_updated_at  DateTime   @default(now()) @db.Timestamptz(6)
+  deleted_at       DateTime?  @db.Timestamptz(6)
+  envelope_id      Int
+  file_name        String     @db.VarChar(100)
+  file_size        Decimal    @db.Decimal(18, 4)
+  file_url         String     @db.VarChar(255)
+  signed_file_name String?    @db.VarChar(255)
+  signed_file_size Decimal?   @db.Decimal(18, 4)
+  signed_file_url  String?    @db.VarChar(255)
+  envelope         envelope   @relation(fields: [envelope_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_document_envelope")
+  signment         signment[]
+  tag              tag[]
+}
+
+model envelope {
+  id                                  Int                     @id @default(autoincrement())
+  created_at                          DateTime                @default(now()) @db.Timestamptz(6)
+  last_updated_at                     DateTime                @default(now()) @db.Timestamptz(6)
+  deleted_at                          DateTime?               @db.Timestamptz(6)
+  subject                             String                  @db.VarChar(100)
+  expires_at                          DateTime                @db.Timestamptz(6)
+  completed_at                        DateTime?               @db.Timestamptz(6)
+  rejected_at                         DateTime?               @db.Timestamptz(6)
+  account_id                          Int?
+  status_id                           Int
+  created_by                          Int?
+  last_updated_by                     Int?
+  deleted_by                          Int?
+  rejected_by                         Int?
+  document                            document[]
+  account_company                     account_company?        @relation(fields: [account_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_envelope_account_company")
+  status                              envelope_status         @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_envelope_envelope_status")
+  user_envelope_created_byTouser      user?                   @relation("envelope_created_byTouser", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_envelope_user_created")
+  user_envelope_deleted_byTouser      user?                   @relation("envelope_deleted_byTouser", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_envelope_user_deleted")
+  user_envelope_rejected_byTouser     user?                   @relation("envelope_rejected_byTouser", fields: [rejected_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_envelope_user_rejected")
+  user_envelope_last_updated_byTouser user?                   @relation("envelope_last_updated_byTouser", fields: [last_updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_envelope_user_updated")
+  envelope_group                      envelope_group[]
+  envelope_rejection                  envelope_rejection[]    @ignore
+  external_api_envelope               external_api_envelope[]
+  recipient                           recipient[]
+}
+
+model envelope_status {
+  id              Int        @id @default(autoincrement())
+  created_at      DateTime   @default(now()) @db.Timestamptz(6)
+  last_updated_at DateTime   @default(now()) @db.Timestamptz(6)
+  deleted_at      DateTime?  @db.Timestamptz(6)
+  label           String     @db.VarChar(50)
+  value           String     @db.VarChar(10)
+  envelope        envelope[]
+}
+
+model id_type {
+  id              Int               @id(map: "signer_type_pkey") @default(autoincrement())
+  label           String            @db.VarChar(50)
+  value           String            @db.VarChar(10)
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  last_updated_at DateTime          @default(now()) @db.Timestamptz(6)
+  deleted_at      DateTime?         @db.Timestamptz(6)
+  account_company account_company[]
+  signer          signer[]
+}
+
+model recipient {
+  id                  Int                  @id @default(autoincrement())
+  created_at          DateTime             @default(now()) @db.Timestamptz(6)
+  last_updated_at     DateTime             @default(now()) @db.Timestamptz(6)
+  deleted_at          DateTime?            @db.Timestamptz(6)
+  envelope_id         Int
+  status_id           Int
+  order               Int
+  name                String               @db.VarChar(255)
+  email               String               @db.VarChar(255)
+  mobile_phone_number String?              @db.VarChar(50)
+  signer_id           Int?
+  validated_at        DateTime?            @db.Timestamptz(6)
+  sent_at             DateTime?            @db.Timestamptz(6)
+  opened_at           DateTime?            @db.Timestamptz(6)
+  signed_at           DateTime?            @db.Timestamptz(6)
+  rejected_at         DateTime?            @db.Timestamptz(6)
+  user_id             Int?
+  message_id          String?              @db.VarChar(255)
+  envelope_rejection  envelope_rejection[] @ignore
+  envelope            envelope             @relation(fields: [envelope_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recipient_envelope")
+  signer              signer?              @relation(fields: [signer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recipient_signer")
+  status              recipient_status     @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recipient_status")
+  user                user?                @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recipient_user")
+  signment            signment[]
+  tag                 tag[]
+}
+
+model recipient_status {
+  id              Int         @id @default(autoincrement())
+  created_at      DateTime    @default(now()) @db.Timestamptz(6)
+  last_updated_at DateTime    @default(now()) @db.Timestamptz(6)
+  deleted_at      DateTime?   @db.Timestamptz(6)
+  label           String      @db.VarChar(50)
+  value           String      @db.VarChar(10)
+  recipient       recipient[]
+}
+
+model signer {
+  id              Int         @id @default(autoincrement())
+  created_at      DateTime    @default(now()) @db.Timestamptz(6)
+  last_updated_at DateTime    @default(now()) @db.Timestamptz(6)
+  deleted_at      DateTime?   @db.Timestamptz(6)
+  country_id      Int
+  id_type_id      Int
+  id_value        String      @db.VarChar(50)
+  entity_name     String?     @db.VarChar(255)
+  given_name1     String?     @db.VarChar(255)
+  given_name2     String?     @db.VarChar(255)
+  sur_name1       String?     @db.VarChar(255)
+  sur_name2       String?     @db.VarChar(255)
+  email           String      @db.VarChar(255)
+  mobile_phone    String?     @db.VarChar(50)
+  recipient       recipient[]
+  country         country     @relation(fields: [country_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_signer_country")
+  id_type         id_type     @relation(fields: [id_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_signer_id_type")
+}
+
+model signment {
+  id               Int       @id @default(autoincrement())
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  last_updated_at  DateTime  @default(now()) @db.Timestamptz(6)
+  deleted_at       DateTime? @db.Timestamptz(6)
+  recipient_id     Int
+  signed_file_name String    @db.VarChar(100)
+  signed_file_size Decimal   @db.Decimal(18, 4)
+  signed_file_url  String    @db.VarChar(255)
+  page             Int
+  position_x1      Int
+  position_y1      Int
+  position_x2      Int
+  position_y2      Int
+  ip_address       String?   @db.VarChar(255)
+  user_agent       String?   @db.VarChar(255)
+  geolocation      String?   @db.VarChar(255)
+  document_id      Int
+  document         document  @relation(fields: [document_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_signment_document")
+  recipient        recipient @relation(fields: [recipient_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_signment_recipient")
+}
+
+model tag {
+  id                             Int       @id @default(autoincrement())
+  created_at                     DateTime  @default(now()) @db.Timestamptz(6)
+  last_updated_at                DateTime  @default(now()) @db.Timestamptz(6)
+  deleted_at                     DateTime? @db.Timestamptz(6)
+  page                           Int
+  position_x1                    Int
+  position_y1                    Int
+  position_x2                    Int
+  position_y2                    Int
+  created_by                     Int?
+  last_updated_by                Int?
+  deleted_by                     Int?
+  document_id                    Int
+  recipient_id                   Int
+  document                       document  @relation(fields: [document_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tag_document")
+  recipient                      recipient @relation(fields: [recipient_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tag_recipient")
+  user_tag_created_byTouser      user?     @relation("tag_created_byTouser", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_tag_deleted_byTouser      user?     @relation("tag_deleted_byTouser", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_tag_last_updated_byTouser user?     @relation("tag_last_updated_byTouser", fields: [last_updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model account_company {
+  id              Int             @id @default(autoincrement())
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  last_updated_at DateTime        @default(now()) @db.Timestamptz(6)
+  deleted_at      DateTime?       @db.Timestamptz(6)
+  name            String?         @db.VarChar(150)
+  address         String?         @db.VarChar(255)
+  country_id      Int
+  id_type_id      Int
+  id_value        String?         @db.VarChar(50)
+  email           String?         @db.VarChar(255)
+  phone_number    String?         @db.VarChar(50)
+  country         country         @relation(fields: [country_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_account_company_country")
+  id_type         id_type         @relation(fields: [id_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_account_company_id_type")
+  company_group   company_group[]
+  envelope        envelope[]
+  external_api    external_api[]
+  role            role[]
+  user_role       user_role[]
+}
+
+model company_group {
+  id                 Int             @id @default(autoincrement())
+  account_company_id Int
+  group_id           Int
+  created_at         DateTime        @default(now()) @db.Timestamptz(6)
+  last_updated_at    DateTime        @default(now()) @db.Timestamptz(6)
+  deleted_at         DateTime?       @db.Timestamptz(6)
+  account_company    account_company @relation(fields: [account_company_id], references: [id])
+  group              group           @relation(fields: [group_id], references: [id])
+}
+
+model envelope_group {
+  id              Int       @id @default(autoincrement())
+  envelope_id     Int
+  group_id        Int
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  last_updated_at DateTime  @default(now()) @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  envelope        envelope  @relation(fields: [envelope_id], references: [id])
+  group           group     @relation(fields: [group_id], references: [id])
+}
+
+model external_api {
+  id                    Int                     @id @default(autoincrement())
+  name                  String                  @db.VarChar(100)
+  role_id               Int
+  account_company_id    Int
+  created_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  last_updated_at       DateTime?               @default(now()) @db.Timestamptz(6)
+  deleted_at            DateTime?               @db.Timestamptz(6)
+  account_company       account_company         @relation(fields: [account_company_id], references: [id], onDelete: SetNull, map: "account_company")
+  role                  role                    @relation(fields: [role_id], references: [id], onDelete: SetNull, map: "role")
+  external_api_envelope external_api_envelope[]
+}
+
+model external_api_envelope {
+  id               Int          @id @default(autoincrement())
+  envelope_id      Int
+  webhook_endpoint String?      @db.VarChar(255)
+  external_api_id  Int
+  created_at       DateTime?    @default(now()) @db.Timestamptz(6)
+  last_updated_at  DateTime?    @default(now()) @db.Timestamptz(6)
+  deleted_at       DateTime?    @db.Timestamptz(6)
+  envelope         envelope     @relation(fields: [envelope_id], references: [id], onDelete: SetNull, map: "envelope")
+  external_api     external_api @relation(fields: [external_api_id], references: [id], onDelete: SetNull, map: "external_api")
+}
+
+model group {
+  id              Int              @id @default(autoincrement())
+  created_at      DateTime         @default(now()) @db.Timestamptz(6)
+  last_updated_at DateTime         @default(now()) @db.Timestamptz(6)
+  deleted_at      DateTime?        @db.Timestamptz(6)
+  name            String           @db.VarChar(100)
+  company_group   company_group[]
+  envelope_group  envelope_group[]
+  user_group      user_group[]
+}
+
+model permission {
+  id              Int               @id @default(autoincrement())
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  last_updated_at DateTime          @default(now()) @db.Timestamptz(6)
+  deleted_at      DateTime?         @db.Timestamptz(6)
+  name            String            @db.VarChar(150)
+  value           String            @unique @db.VarChar(100)
+  role_permission role_permission[]
+}
+
+model role {
+  id              Int               @id @default(autoincrement())
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  last_updated_at DateTime          @default(now()) @db.Timestamptz(6)
+  deleted_at      DateTime?         @db.Timestamptz(6)
+  name            String            @db.VarChar(150)
+  company_id      Int?
+  external_api    external_api[]
+  account_company account_company?  @relation(fields: [company_id], references: [id])
+  role_permission role_permission[]
+  user_role       user_role[]
+}
+
+model role_permission {
+  id              Int        @id @default(autoincrement())
+  permission_id   Int
+  role_id         Int
+  created_at      DateTime   @default(now()) @db.Timestamptz(6)
+  last_updated_at DateTime   @default(now()) @db.Timestamptz(6)
+  deleted_at      DateTime?  @db.Timestamptz(6)
+  permission      permission @relation(fields: [permission_id], references: [id])
+  role            role       @relation(fields: [role_id], references: [id])
+}
+
+model user {
+  id                                      Int          @id @default(autoincrement())
+  created_at                              DateTime     @default(now()) @db.Timestamptz(6)
+  last_updated_at                         DateTime     @default(now()) @db.Timestamptz(6)
+  deleted_at                              DateTime?    @db.Timestamptz(6)
+  full_name                               String       @db.VarChar(150)
+  username                                String       @db.VarChar(100)
+  password                                String       @db.VarChar(255)
+  email                                   String       @db.VarChar(50)
+  last_activity_at                        DateTime?    @db.Timestamptz(6)
+  created_by                              Int?
+  last_updated_by                         Int?
+  deleted_by                              Int?
+  is_sudo                                 Boolean      @default(false)
+  envelope_envelope_created_byTouser      envelope[]   @relation("envelope_created_byTouser")
+  envelope_envelope_deleted_byTouser      envelope[]   @relation("envelope_deleted_byTouser")
+  envelope_envelope_rejected_byTouser     envelope[]   @relation("envelope_rejected_byTouser")
+  envelope_envelope_last_updated_byTouser envelope[]   @relation("envelope_last_updated_byTouser")
+  recipient                               recipient[]
+  tag_tag_created_byTouser                tag[]        @relation("tag_created_byTouser")
+  tag_tag_deleted_byTouser                tag[]        @relation("tag_deleted_byTouser")
+  tag_tag_last_updated_byTouser           tag[]        @relation("tag_last_updated_byTouser")
+  user_userTouser_created_by              user?        @relation("userTouser_created_by", fields: [created_by], references: [id])
+  other_user_userTouser_created_by        user[]       @relation("userTouser_created_by")
+  user_userTouser_deleted_by              user?        @relation("userTouser_deleted_by", fields: [deleted_by], references: [id])
+  other_user_userTouser_deleted_by        user[]       @relation("userTouser_deleted_by")
+  user_userTouser_last_updated_by         user?        @relation("userTouser_last_updated_by", fields: [last_updated_by], references: [id])
+  other_user_userTouser_last_updated_by   user[]       @relation("userTouser_last_updated_by")
+  user_group                              user_group[]
+  user_role                               user_role[]
+}
+
+model user_group {
+  id              Int       @id @default(autoincrement())
+  user_id         Int
+  group_id        Int
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  last_updated_at DateTime  @default(now()) @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  group           group     @relation(fields: [group_id], references: [id])
+  user            user      @relation(fields: [user_id], references: [id])
+}
+
+model user_role {
+  id                 Int             @id @default(autoincrement())
+  created_at         DateTime        @default(now()) @db.Timestamptz(6)
+  last_updated_at    DateTime        @default(now()) @db.Timestamptz(6)
+  deleted_at         DateTime?       @db.Timestamptz(6)
+  account_company_id Int
+  user_id            Int
+  role_id            Int
+  account_company    account_company @relation(fields: [account_company_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_role_acc_company")
+  user               user            @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_role_account_company")
+  role               role            @relation(fields: [role_id], references: [id])
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model envelope_rejection {
+  id          Int?       @default(autoincrement())
+  envelope_id Int?
+  recipient_i Int?
+  rejected_at DateTime?  @db.Date
+  reason      String?    @db.VarChar(254)
+  envelope    envelope?  @relation(fields: [id], references: [id], onDelete: Cascade, map: "fk_rejection_envelope")
+  recipient   recipient? @relation(fields: [id], references: [id], onDelete: Cascade, map: "fk_rejection_recipient")
+
+  @@ignore
+}

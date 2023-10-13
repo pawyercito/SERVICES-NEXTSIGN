@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+  nextsign-files:
+    image: nextsign-files
+    container_name: nextsign-files
+    build:
+      context: ./services/nextsign-services-files
+      dockerfile: Dockerfile
+    ports:
+      - "3003:8080"
+
+
+  nextsign-sign:
+    image: nextsign-sign
+    container_name: nextsign-sign
+    build:
+      context: ./services/nextsign-services-sign
+      dockerfile: Dockerfile
+    ports:
+      - "3002:8080"
+
+
+  nextsign-utils:
+    image: nextsign-utils
+    container_name: nextsign-utils
+    build:
+      context: ./services/nextsign-services-utils
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5000"
+
+
+  nextsign-reminders:
+    image: nextsign-reminders
+    container_name: nextsign-reminders
+    build:
+      context: ./services/nextsign-services-reminders
+      dockerfile: Dockerfile
+    ports:
+      - "3004:8080"
+   
+

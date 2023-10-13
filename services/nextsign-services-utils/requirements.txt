@@ -1,0 +1,10 @@
+Flask
+Flask-Cors
+pytz
+boto3
+cryptography
+swig
+endesive
+qrcode
+python-dotenv
+requests

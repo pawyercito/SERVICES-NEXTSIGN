@@ -1,0 +1,22 @@
+{
+  "name": "nextsign-services-messages",
+  "version": "1.0.0",
+  "description": "Recive mensajes de estado de correos enviados y modifica esos estads en la base de datos",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^4.13.0",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22",
+    "prisma": "^4.13.0"
+  }
+}
